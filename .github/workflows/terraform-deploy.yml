@@ -92,13 +92,14 @@ jobs:
       id: tf-plan
       working-directory: ./infra
       run: |
-        export exitcode=0
-        terraform plan -detailed-exitcode -out tfplan || export exitcode=$?
+        terraform plan -detailed-exitcode -out=tfplan
+        exitcode=$?
 
-        echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
+        echo "Terraform plan exit code: $exitcode"
+        echo "exitcode=$exitcode" >> "$GITHUB_OUTPUT"
 
-        if [ $exitcode -eq 1 ]; then
-          echo Terraform Plan Failed!
+        if [ "$exitcode" -eq 1 ]; then
+          echo "Terraform Plan Failed ❌"
           exit 1
         else
           exit 0
@@ -205,8 +206,10 @@ jobs:
     if: |
       always() &&
       needs.validate.result == 'success' &&
-      needs.validate.outputs.tfplanExitCode == '2' &&
-      (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
+      (
+      github.event_name == 'workflow_dispatch' ||
+      (github.ref == 'refs/heads/main' && needs.validate.outputs.tfplanExitCode == '2')
+      )
     environment:
       name: ${{ github.event.inputs.environment || 'production' }}
       url: ${{ steps.tf-output.outputs.load_balancer_url }}

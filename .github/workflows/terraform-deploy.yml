@@ -93,7 +93,7 @@ jobs:
       working-directory: ./infra
       run: |
         export exitcode=0
-        terraform plan -detailed-exitcode -no-color -out tfplan || export exitcode=$?
+        terraform plan -detailed-exitcode -out tfplan || export exitcode=$?
 
         echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
 
@@ -114,7 +114,7 @@ jobs:
       id: tf-plan-string
       working-directory: ./infra
       run: |
-        TERRAFORM_PLAN=$(terraform show -no-color tfplan)
+        TERRAFORM_PLAN=$(terraform show tfplan)
 
         delimiter="$(openssl rand -hex 8)"
         echo "summary<<${delimiter}" >> $GITHUB_OUTPUT

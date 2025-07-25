@@ -11,6 +11,7 @@ on:
 env:
   AWS_REGION: "us-east-1"
   WORKING_DIR: infra
+  TERRAFORM_VERSION: "1.10.0"
 
 jobs:
   checkov-scan:
@@ -75,7 +76,7 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_wrapper: false
-          terraform_version: 1.9.0
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
 
       - name: Set Terraform environment variable
         run: |

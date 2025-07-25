@@ -109,7 +109,7 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}
         run: |
             tflint --recursive --no-color --format=default | tee tflint_report.txt
-            
+
       - name: Show TFLint
         id: show_tflint
         working-directory: ${{ env.WORKING_DIR }}

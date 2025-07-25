@@ -1,0 +1,185 @@
+name: Combined Linting Pipeline for Terraform
+
+on:
+  push:
+    branches: ["main", "dev"]
+  pull_request:
+    branches: ["main", "dev"]
+    paths:
+      - '**.tf'
+      - '**.tfvars'
+
+env:
+  AWS_REGION: "us-east-1"
+  WORKING_DIR: infra
+  ARM_USE_OIDC: 'true'
+  ROOT_PATH: ${{ github.workspace }}
+
+jobs:
+  checkov-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.8
+
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v1.7.0
+        with:
+          role-to-assume: arn:aws:iam::901876312125:role/terraform-aws-ecs-webapp #change to reflect your IAM role’s ARN
+          role-session-name: GitHub_to_AWS_via_FederatedOIDC
+          aws-region: ${{ env.AWS_REGION }}
+
+      # Hello from AWS: WhoAmI
+      - name: Sts GetCallerIdentity
+        run: |
+          aws sts get-caller-identity
+
+#       - name: Test with Checkov
+#         id: checkov
+#         uses: bridgecrewio/checkov-action@v12
+#         with:
+#           output_format: cli,json
+#           output_file_path: console,results_checkov.json
+#           directory: ${{ env.WORKING_DIR }}
+#           framework: terraform
+
+#       - name: Publish Checkov report
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: CheckovReport
+#           path: ./results_checkov.json
+
+#   tf-linting:
+#     # needs: checkov-scan
+#     runs-on: ubuntu-latest
+#     permissions:
+#       contents: 'read'
+#       id-token: 'write'
+
+#     steps:
+#       - uses: actions/checkout@v4
+
+#       - name: Az CLI login
+#         if: env.ARM_USE_OIDC == 'true'
+#         uses: azure/login@v2
+#         with:
+#           client-id: ${{ env.ARM_CLIENT_ID }}
+#           tenant-id: ${{ env.ARM_TENANT_ID }}
+#           subscription-id: ${{ env.ARM_SUBSCRIPTION_ID }}
+#           allow-no-subscriptions: true
+
+#       - name: Setup Terraform
+#         uses: hashicorp/setup-terraform@v3
+#         with:
+#           terraform_wrapper: false
+
+#       - name: Set Terraform environment variable
+#         run: |
+#           if [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
+#             echo "TF_VAR_env=dev" >> $GITHUB_ENV
+#           elif [[ "${{ github.ref }}" == "refs/heads/main" && "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+#             echo "TF_VAR_env=prod" >> $GITHUB_ENV
+#           else
+#             echo "TF_VAR_env=test" >> $GITHUB_ENV
+#           fi
+
+#       - name: Terraform init, fmt, and validate
+#         working-directory: ${{ env.WORKING_DIR }}/open_ai
+#         id: terraform
+#         run: |
+#           terraform init -backend-config="key=${{env.TF_VAR_env}}.terraform.tfstate"
+#           terraform fmt --recursive -no-color
+#           terraform validate -no-color
+
+#       - name: Install TFLint
+#         id: tflint_install
+#         run: curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+
+#       - name: TFLint init
+#         id: tflint_init
+#         working-directory: ${{ env.WORKING_DIR }}/open_ai
+#         run: tflint --init --config=./.tflint.hcl
+
+#       - name: Run TFLint
+#         id: run_tflint
+#         working-directory: ${{ env.WORKING_DIR }}/open_ai
+#         run: |
+#             tflint --recursive --no-color --module --format=default | tee tflint_report.xml
+#             chmod +x tflint.sh
+#             ./tflint.sh
+
+#       - name: Show TFLint
+#         id: show_tflint
+#         working-directory: ${{ env.WORKING_DIR }}/open_ai
+#         run: cat tflint_report.xml
+
+#       - name: Checking if the report is created, passing true or false from the Shell script
+#         run: echo ${{ steps.run_tflint.outputs.publish_tflint }}
+
+#       - name: Publish Tflint
+#         uses: actions/upload-artifact@v4
+#         if:  ${{ steps.run_tflint.outputs.publish_tflint == 'true' }}
+#         with:
+#           name: tflintReport
+#           path: ./tflint_report.xml
+
+#       - name: TFLint Status
+#         if: steps.run_tflint.outputs.publish_tflint == 'true'
+#         run: |
+#             echo "Warning: TFLint has identified issues. Please review the TFLint report in the published artifact attached to this pipeline. It's recommended to address these issues."
+
+  # terratest:
+  #   # needs: [checkov-scan, tf-linting]
+  #   needs: [tf-linting]
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     contents: 'read'
+  #     id-token: 'write'
+  #   steps:
+  #     - uses: actions/checkout@v4
+
+  #     - name: Az CLI login
+  #       if: env.ARM_USE_OIDC == 'true'
+  #       uses: azure/login@v2
+  #       with:
+  #         client-id: ${{ env.ARM_CLIENT_ID }}
+  #         tenant-id: ${{ env.ARM_TENANT_ID }}
+  #         subscription-id: ${{ env.ARM_SUBSCRIPTION_ID }}
+  #         allow-no-subscriptions: true
+
+  #     - name: Set up Go
+  #       uses: actions/setup-go@v5
+  #       with:
+  #         go-version: '>=1.17.0'
+
+  #     - name: Install Python Dependencies
+  #       working-directory: ${{ env.WORKING_DIR }}/tests
+  #       run: pip install numpy
+
+  #     - name: Initialize Go module
+  #       working-directory: ${{ env.WORKING_DIR }}/tests
+  #       run: go mod init vertexai_index
+
+  #     - name: Download dependencies
+  #       working-directory: ${{ env.WORKING_DIR }}/tests
+  #       run: go mod tidy
+
+  #     - name: Test with Terratest
+  #       working-directory: ${{ env.WORKING_DIR }}/tests
+  #       run: |
+  #         go test | tee terratest_output.json
+  #         cp ./terratest_output.json $ROOT_PATH >> /dev/null 2>&1
+
+  #     - name: Publish Terratest report
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: TerratestReport
+  #         path: ./terratest_output.json

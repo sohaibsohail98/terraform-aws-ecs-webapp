@@ -1,5 +1,17 @@
 # Sohaib Sohail - DevOps Portfolio Application
 
+## Local Setup:
+
+To set this up locally:
+
+Clone the repo and make sure you have Python installed.
+
+- cd into the project directory
+- run ```pip install -r requirements.txt```
+- run ```python3 app.py```
+
+Check your browser for localhost:8080.
+
 ## 🎯 Current Application
 
 This repository now showcases a **professional portfolio web application** for **Sohaib Sohail**, DevOps Engineer at PwC, featuring:

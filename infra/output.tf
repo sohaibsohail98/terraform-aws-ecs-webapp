@@ -42,19 +42,3 @@ output "cloudwatch_log_group" {
   description = "CloudWatch log group name"
   value       = aws_cloudwatch_log_group.ecs_log_group.name
 }
-
-# ECR Outputs
-output "ecr_repository_url" {
-  description = "ECR repository URL"
-  value       = aws_ecr_repository.app.repository_url
-}
-
-output "ecr_repository_name" {
-  description = "ECR repository name"
-  value       = aws_ecr_repository.app.name
-}
-
-output "docker_image_url" {
-  description = "Full Docker image URL used by ECS"
-  value       = local.ecr_image_url
-}

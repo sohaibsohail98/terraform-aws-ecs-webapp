@@ -195,3 +195,9 @@ variable "enable_container_insights" {
   description = "Enable CloudWatch Container Insights for ECS cluster"
   type        = bool
 }
+
+variable "ecr_repository_name" {
+  description = "Name of the ECR repository for the application"
+  type        = string
+
+}

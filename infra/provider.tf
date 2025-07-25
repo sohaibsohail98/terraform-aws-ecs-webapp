@@ -19,11 +19,11 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "ecs-webapp-terraform-state-sohaib"
-    key            = "terraform.tfstate"
-    region         = "us-east-1"
-    encrypt        = true
-    use_lockfile   = true
+    bucket       = "ecs-webapp-terraform-state-sohaib"
+    key          = "terraform.tfstate"
+    region       = "us-east-1"
+    encrypt      = true
+    use_lockfile = true
   }
 }
 

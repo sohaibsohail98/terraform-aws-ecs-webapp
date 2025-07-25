@@ -57,7 +57,7 @@ resource "aws_eip" "nat" {
   for_each = aws_subnet.public
 
   domain = "vpc"
-  
+
   tags = {
     Name = "ecs-webapp-nat-eip-${each.key}"
   }

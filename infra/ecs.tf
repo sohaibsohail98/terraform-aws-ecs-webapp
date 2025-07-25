@@ -62,12 +62,12 @@ resource "aws_ecs_task_definition" "main" {
   cpu                      = var.cpu
   memory                   = var.memory
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
-  task_role_arn           = aws_iam_role.ecs_task_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
 
   container_definitions = jsonencode([
     {
       name  = var.app_name
-      image = local.ecr_image_url
+      image = data.aws_ecr_image.app_image.image_uri
 
       portMappings = [
         {
@@ -114,8 +114,6 @@ resource "aws_ecs_task_definition" "main" {
   tags = {
     Name = "${var.app_name}-task-definition"
   }
-
-  depends_on = [null_resource.docker_build_push]
 }
 
 # ECS Service

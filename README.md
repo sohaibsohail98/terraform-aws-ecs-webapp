@@ -221,6 +221,7 @@ resource "aws_vpc" "main" {
 }
 ```
 **Purpose**: Provides isolated network environment for the application
+
 **Configuration**:
 - DNS resolution enabled for service discovery
 - Custom CIDR block for network isolation
@@ -238,6 +239,7 @@ resource "aws_subnet" "public" {
 }
 ```
 **Purpose**: Host internet-facing resources (load balancer, NAT gateways)
+
 **Configuration**:
 - Multi-AZ deployment for high availability
 - Auto-assign public IPs for internet connectivity
@@ -254,6 +256,7 @@ resource "aws_subnet" "private" {
 }
 ```
 **Purpose**: Host application containers in isolated environment
+
 **Configuration**:
 - No direct internet access for security
 - ECS tasks deployed here
@@ -266,6 +269,7 @@ resource "aws_internet_gateway" "main" {
 }
 ```
 **Purpose**: Provides internet access for public subnets
+
 **Configuration**: Attached to VPC for bidirectional internet connectivity
 
 ### 5. **NAT Gateways**
@@ -278,6 +282,7 @@ resource "aws_nat_gateway" "main" {
 }
 ```
 **Purpose**: Provides outbound internet access for private subnets
+
 **Configuration**:
 - One NAT gateway per AZ for high availability
 - Elastic IPs for consistent outbound IP addresses
@@ -308,6 +313,7 @@ resource "aws_route_table" "private" {
 }
 ```
 **Purpose**: Define network traffic routing rules
+
 **Configuration**:
 - Public subnets route to Internet Gateway
 - Private subnets route to NAT Gateway
@@ -324,6 +330,7 @@ resource "aws_lb" "main" {
 }
 ```
 **Purpose**: Distributes incoming traffic across multiple ECS tasks
+
 **Configuration**:
 - Internet-facing for external access
 - Multi-AZ deployment for high availability
@@ -351,6 +358,7 @@ resource "aws_lb_target_group" "main" {
 }
 ```
 **Purpose**: Defines health check parameters and routing for ECS tasks
+
 **Configuration**:
 - IP target type for Fargate compatibility
 - Configurable health check parameters
@@ -363,7 +371,7 @@ resource "aws_lb_target_group" "main" {
 resource "aws_security_group" "alb" {
   name_prefix = "ecs-webapp-alb-"
   vpc_id      = aws_vpc.main.id
-  
+
   ingress {
     from_port   = var.alb_listener_port
     to_port     = var.alb_listener_port
@@ -373,6 +381,7 @@ resource "aws_security_group" "alb" {
 }
 ```
 **Purpose**: Controls traffic to load balancer
+
 **Configuration**:
 - Configurable ingress ports and CIDR blocks
 - Allows external traffic on specified ports
@@ -393,6 +402,7 @@ resource "aws_security_group" "ecs_tasks" {
 }
 ```
 **Purpose**: Controls traffic to ECS containers
+
 **Configuration**:
 - Only allows traffic from ALB security group
 - Implements least privilege access
@@ -410,6 +420,7 @@ resource "aws_ecs_cluster" "main" {
 }
 ```
 **Purpose**: Logical grouping of compute resources for containers
+
 **Configuration**:
 - Container Insights for monitoring (configurable)
 - Serverless compute with Fargate
@@ -430,6 +441,7 @@ resource "aws_ecs_task_definition" "main" {
 }
 ```
 **Purpose**: Defines container specifications and resource requirements
+
 **Configuration**:
 - Fargate launch type for serverless execution
 - Configurable CPU and memory allocation
@@ -493,6 +505,7 @@ resource "aws_appautoscaling_policy" "ecs_policy_cpu" {
 }
 ```
 **Purpose**: Automatically scales containers based on demand
+
 **Configuration**:
 - CPU and memory-based scaling policies
 - Configurable target utilization thresholds
@@ -519,6 +532,7 @@ resource "aws_iam_role" "ecs_task_execution_role" {
 }
 ```
 **Purpose**: Allows ECS to pull images and write logs
+
 **Configuration**:
 - Minimal permissions for task execution
 - CloudWatch logs access
@@ -532,6 +546,7 @@ resource "aws_iam_role" "ecs_task_role" {
 }
 ```
 **Purpose**: Provides application-specific AWS permissions
+
 **Configuration**:
 - Can be extended for application needs (S3, DynamoDB, etc.)
 - Follows least privilege principle
@@ -545,6 +560,7 @@ resource "aws_cloudwatch_log_group" "ecs_log_group" {
 }
 ```
 **Purpose**: Centralized logging for application containers
+
 **Configuration**:
 - Configurable retention period
 - Structured log path for organization

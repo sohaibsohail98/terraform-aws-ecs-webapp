@@ -13,6 +13,15 @@ module "security" {
   container_port = var.container_port
 }
 
+module "acm" {
+  count  = var.enable_https ? 1 : 0
+  source = "./modules/acm"
+
+  domain_name = var.route53_record_name
+  app_name    = var.app_name
+  environment = var.environment
+}
+
 module "alb" {
   source = "./modules/alb"
 
@@ -21,6 +30,11 @@ module "alb" {
   alb_security_group_id = module.security.alb_security_group_id
   container_port        = var.container_port
   health_check_path     = var.health_check_path
+
+  # SSL/HTTPS configuration
+  enable_https         = var.enable_https
+  enable_http_redirect = var.enable_http_redirect
+  certificate_arn      = var.enable_https ? module.acm[0].certificate_arn : null
 }
 
 module "ecs" {
@@ -65,7 +79,16 @@ module "route53" {
 
   route53_zone_name   = var.route53_zone_name
   route53_record_name = var.route53_record_name
+  route53_zone_id     = var.route53_zone_id
+  create_hosted_zone  = false # Use existing hosted zone
   alb_dns_name        = module.alb.alb_dns_name
   alb_zone_id         = module.alb.alb_zone_id
+
+  # SSL certificate validation
+  enable_ssl                = var.enable_https
+  domain_validation_options = var.enable_https ? module.acm[0].domain_validation_options : []
+  certificate_arn           = var.enable_https ? module.acm[0].certificate_arn : null
+
+  depends_on = [module.acm, module.alb]
 }
 

@@ -210,3 +210,20 @@ variable "route53_record_name" {
   description = "Route53 record name for the domain"
   type        = string
 }
+
+variable "route53_zone_id" {
+  description = "Route53 hosted zone ID for DNS validation"
+  type        = string
+}
+
+variable "enable_https" {
+  description = "Enable HTTPS listener with SSL certificate"
+  type        = bool
+  default     = true
+}
+
+variable "enable_http_redirect" {
+  description = "Enable HTTP to HTTPS redirect"
+  type        = bool
+  default     = true
+}

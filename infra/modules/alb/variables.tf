@@ -77,3 +77,21 @@ variable "alb_listener_protocol" {
   type        = string
   default     = "HTTP"
 }
+
+variable "certificate_arn" {
+  description = "ARN of the SSL certificate for HTTPS listener"
+  type        = string
+  default     = null
+}
+
+variable "enable_https" {
+  description = "Enable HTTPS listener"
+  type        = bool
+  default     = false
+}
+
+variable "enable_http_redirect" {
+  description = "Enable HTTP to HTTPS redirect"
+  type        = bool
+  default     = false
+}

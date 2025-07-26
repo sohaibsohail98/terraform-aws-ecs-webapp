@@ -50,6 +50,25 @@ public_subnets = {
 | `cpu_target_value` | CPU utilization target % | number | - |
 | `memory_target_value` | Memory utilization target % | number | - |
 
+## SSL/HTTPS Configuration
+
+| Variable | Description | Type | Default |
+|----------|-------------|------|---------|
+| `route53_zone_name` | Domain name for hosted zone | string | - |
+| `route53_record_name` | Full domain for the application | string | - |
+| `route53_zone_id` | Existing Route53 hosted zone ID | string | - |
+| `enable_https` | Enable HTTPS with SSL certificate | bool | `true` |
+| `enable_http_redirect` | Redirect HTTP to HTTPS | bool | `true` |
+
+Example:
+```hcl
+route53_zone_name = "example.com"
+route53_record_name = "app.example.com"
+route53_zone_id = "Z1234567890ABC"
+enable_https = true
+enable_http_redirect = true
+```
+
 ## Monitoring
 
 | Variable | Description | Type | Default |

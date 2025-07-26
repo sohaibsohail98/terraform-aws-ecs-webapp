@@ -21,17 +21,17 @@ This repository showcases a **professional portfolio web application** for **Soh
 ### 📸 Application Demo
 
 #### Portfolio Homepage
-![Portfolio Homepage](docs/images/Screenshot%202025-07-25%20at%2011.31.58%20pm.png)
+![Portfolio Homepage](docs/images/portfolio-homepage.png)
 
 #### Interactive Snake Game
-![Snake Game](docs/images/Screenshot%202025-07-25%20at%2011.32.13%20pm.png)
+![Snake Game](docs/images/snake-game.png)
 
 ## 🏗️ Infrastructure Overview
 
 A production-ready, highly available ECS Fargate web application infrastructure deployed on AWS using Terraform. Features modular design, auto-scaling, comprehensive monitoring, and security-first architecture.
 
 ### Architecture Diagram
-![ECS Architecture](docs/images/ECS%20Architecture%20Web%20App.jpeg)
+![ECS Architecture](docs/images/ecs-architecture.jpeg)
 
 ### 📁 Project Structure
 ```

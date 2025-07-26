@@ -201,3 +201,12 @@ variable "ecr_repository_name" {
   type        = string
 
 }
+variable "route53_zone_name" {
+  description = "Route53 hosted zone name for the domain"
+  type        = string
+}
+
+variable "route53_record_name" {
+  description = "Route53 record name for the domain"
+  type        = string
+}

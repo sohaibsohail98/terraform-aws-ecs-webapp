@@ -27,10 +27,11 @@ module "ecs" {
   source = "./ecs"
 
   # Core application variables
-  app_name         = var.app_name
-  environment      = var.environment
-  aws_region       = var.aws_region
-  container_port   = var.container_port
+  app_name          = var.app_name
+  environment       = var.environment
+  aws_region        = var.aws_region
+  container_port    = var.container_port
+  health_check_path = var.health_check_path
 
   # ECS-specific variables
   cpu                                 = var.cpu
@@ -52,10 +53,19 @@ module "ecs" {
   ecr_repository_name                 = var.ecr_repository_name
 
   # Module integration variables
-  vpc_id              = module.vpc.vpc_id
-  private_subnet_ids  = module.vpc.private_subnet_ids
-  security_group_id   = module.security.ecs_security_group_id
-  target_group_arn    = module.alb.target_group_arn
-  listener_arn        = module.alb.listener_arn
+  vpc_id             = module.vpc.vpc_id
+  private_subnet_ids = module.vpc.private_subnet_ids
+  security_group_id  = module.security.ecs_security_group_id
+  target_group_arn   = module.alb.target_group_arn
+  listener_arn       = module.alb.listener_arn
+}
+
+module "route53" {
+  source = "./route53"
+
+  route53_zone_name   = var.route53_zone_name
+  route53_record_name = var.route53_record_name
+  alb_dns_name        = module.alb.alb_dns_name
+  alb_zone_id         = module.alb.alb_zone_id
 }
 

@@ -1,0 +1,108 @@
+name: 'Terraform Infrastructure Destroy'
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to destroy'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+        - dev
+        - staging
+        - prod
+      confirm_destroy:
+        description: 'Type "DESTROY" to confirm destruction'
+        required: true
+        type: string
+
+env:
+  AWS_REGION: us-east-1
+  TERRAFORM_VERSION: 1.10.0
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  validate-destroy:
+    name: 'Validate Destroy Request'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Validate confirmation
+      run: |
+        if [ "${{ github.event.inputs.confirm_destroy }}" != "DESTROY" ]; then
+          echo "❌ Destroy confirmation failed. You must type 'DESTROY' to proceed."
+          exit 1
+        fi
+        echo "✅ Destroy confirmation validated"
+
+  destroy:
+    name: 'Terraform Destroy'
+    runs-on: ubuntu-latest
+    needs: validate-destroy
+    environment:
+      name: ${{ github.event.inputs.environment }}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/terraform-aws-ecs-webapp
+        role-session-name: GitHub_to_AWS_via_FederatedOIDC
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Verify AWS Identity
+      run: |
+        aws sts get-caller-identity
+        echo "AWS Region: $AWS_REGION"
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+    - name: Terraform Init
+      id: init
+      working-directory: ./infra
+      run: terraform init
+
+    - name: Terraform Validate
+      id: validate
+      working-directory: ./infra
+      run: terraform validate
+
+    - name: Terraform Plan Destroy
+      id: plan-destroy
+      working-directory: ./infra
+      run: |
+        echo "## 🚨 Terraform Destroy Plan" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Environment:** ${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        terraform plan -destroy -out=destroy-plan
+        
+        echo "### Resources to be destroyed:" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        terraform show destroy-plan >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+
+    - name: Terraform Destroy
+      id: destroy
+      working-directory: ./infra
+      run: |
+        echo "🚨 Starting infrastructure destruction..."
+        terraform apply -auto-approve destroy-plan
+        
+        echo "## 💥 Infrastructure Destroyed!" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Environment:** ${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Destroyed at:** $(date -u)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "⚠️ All resources for this environment have been permanently deleted." >> $GITHUB_STEP_SUMMARY

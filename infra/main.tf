@@ -38,7 +38,7 @@ module "alb" {
 }
 
 module "ecs" {
-  source = "./ecs"
+  source = "./modules/ecs"
 
   # Core application variables
   app_name          = var.app_name

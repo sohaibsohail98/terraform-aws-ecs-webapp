@@ -79,7 +79,7 @@ module "route53" {
 
   route53_zone_name   = var.route53_zone_name
   route53_record_name = var.route53_record_name
-  create_hosted_zone  = true # Create new hosted zone
+  create_hosted_zone  = false # Use existing hosted zone from Route53 transfer
   alb_dns_name        = module.alb.alb_dns_name
   alb_zone_id         = module.alb.alb_zone_id
 

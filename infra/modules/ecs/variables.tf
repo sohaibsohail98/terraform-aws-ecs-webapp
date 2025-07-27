@@ -20,16 +20,9 @@ variable "container_port" {
 }
 
 # ECS-specific variables
-variable "container_image" {
-  description = "Docker image for the ECS task (not used when using ECR)"
-  type        = string
-  default     = ""
-}
-
 variable "image_tag" {
   description = "Docker image tag"
   type        = string
-  default     = "latest"
 }
 
 variable "cpu" {
@@ -133,29 +126,24 @@ variable "ecr_repository_name" {
 variable "vpc_id" {
   description = "ID of the VPC from vpc module"
   type        = string
-  default     = ""
 }
 
 variable "private_subnet_ids" {
   description = "List of private subnet IDs from vpc module"
   type        = list(string)
-  default     = []
 }
 
 variable "security_group_id" {
   description = "Security group ID for ECS tasks from security module"
   type        = string
-  default     = ""
 }
 
 variable "target_group_arn" {
   description = "ALB target group ARN from alb module"
   type        = string
-  default     = ""
 }
 
 variable "listener_arn" {
   description = "ALB listener ARN from alb module"
   type        = string
-  default     = ""
 }

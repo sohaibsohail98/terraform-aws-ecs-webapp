@@ -2,6 +2,11 @@ output "route53_zone_id" {
   value = var.create_hosted_zone ? aws_route53_zone.main[0].id : var.route53_zone_id
 }
 
+output "zone_id" {
+  description = "Route53 hosted zone ID"
+  value       = var.create_hosted_zone ? aws_route53_zone.main[0].id : var.route53_zone_id
+}
+
 output "route53_record_name" {
   value = aws_route53_record.main.name
 }

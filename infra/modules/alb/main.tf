@@ -81,4 +81,6 @@ resource "aws_lb_listener" "https" {
     type             = "forward"
     target_group_arn = aws_lb_target_group.main.arn
   }
+
+  depends_on = [aws_lb_target_group.main]
 }

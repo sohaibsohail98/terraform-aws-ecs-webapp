@@ -105,6 +105,6 @@ module "route53" {
   domain_validation_options = var.enable_https ? module.acm[0].domain_validation_options : []
   certificate_arn           = var.enable_https ? module.acm[0].certificate_arn : null
 
-  depends_on = [module.acm, module.alb]
+  depends_on = [module.acm]
 }
 

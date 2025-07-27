@@ -23,12 +23,7 @@ output "http_listener_arn" {
   value       = aws_lb_listener.http.arn
 }
 
-output "https_listener_arn" {
-  description = "ARN of the HTTPS listener"
-  value       = var.enable_https ? aws_lb_listener.https[0].arn : null
-}
-
 output "listener_arn" {
-  description = "ARN of the primary listener (backwards compatibility)"
-  value       = var.enable_https ? aws_lb_listener.https[0].arn : aws_lb_listener.http.arn
+  description = "ARN of the HTTP listener"
+  value       = aws_lb_listener.http.arn
 }

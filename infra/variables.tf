@@ -211,10 +211,6 @@ variable "route53_record_name" {
   type        = string
 }
 
-variable "route53_zone_id" {
-  description = "Route53 hosted zone ID for DNS validation"
-  type        = string
-}
 
 variable "enable_https" {
   description = "Enable HTTPS listener with SSL certificate"
@@ -226,4 +222,15 @@ variable "enable_http_redirect" {
   description = "Enable HTTP to HTTPS redirect"
   type        = bool
   default     = true
+}
+
+variable "domain_name" {
+  description = "Primary domain name for ACM certificate"
+  type        = string
+}
+
+variable "subject_alternative_names" {
+  description = "Subject alternative names for ACM certificate"
+  type        = list(string)
+  default     = []
 }

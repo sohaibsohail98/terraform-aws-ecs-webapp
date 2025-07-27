@@ -46,8 +46,10 @@ A production-ready, highly available ECS Fargate web application infrastructure 
     ├── modules/         # Reusable infrastructure modules
     │   ├── vpc/         # VPC, subnets, networking
     │   ├── alb/         # Application Load Balancer
-    │   └── security/    # Security groups
-    ├── ecs/             # ECS cluster and services
+    │   ├── security/    # Security groups
+    │   ├── ecs/         # ECS cluster and services
+    │   ├── acm/         # SSL certificates
+    │   └── route53/     # DNS and domain management
     ├── main.tf          # Module orchestration
     ├── ARCHITECTURE.md  # Infrastructure architecture guide
     ├── DEPLOYMENT.md    # Deployment instructions
@@ -65,7 +67,9 @@ The Terraform infrastructure has been **completely modularized** for better main
    - `modules/vpc/` - VPC, subnets, NAT gateways, route tables
    - `modules/alb/` - Application Load Balancer and target groups
    - `modules/security/` - Security groups for ALB and ECS tasks
-   - `ecs/` - ECS cluster, service, task definitions, auto-scaling
+   - `modules/ecs/` - ECS cluster, service, task definitions, auto-scaling, ECR
+   - `modules/acm/` - SSL certificate management
+   - `modules/route53/` - DNS zones and domain management
 
 2. **Cleaned up variables** - Removed duplicate variables across modules
 3. **Enhanced documentation** - Split into focused guides (see Documentation section)

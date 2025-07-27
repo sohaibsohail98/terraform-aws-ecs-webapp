@@ -9,17 +9,20 @@ module "vpc" {
 module "security" {
   source = "./modules/security"
 
-  vpc_id         = module.vpc.vpc_id
-  container_port = var.container_port
+  vpc_id                  = module.vpc.vpc_id
+  container_port          = var.container_port
+  alb_listener_port       = var.alb_listener_port
+  alb_ingress_cidr_blocks = var.alb_ingress_cidr_blocks
 }
 
 module "acm" {
   count  = var.enable_https ? 1 : 0
   source = "./modules/acm"
 
-  domain_name = var.route53_record_name
-  app_name    = var.app_name
-  environment = var.environment
+  domain_name               = var.domain_name
+  subject_alternative_names = var.subject_alternative_names
+  app_name                  = var.app_name
+  environment               = var.environment
 }
 
 module "alb" {
@@ -30,6 +33,19 @@ module "alb" {
   alb_security_group_id = module.security.alb_security_group_id
   container_port        = var.container_port
   health_check_path     = var.health_check_path
+  
+  # ALB Configuration
+  alb_listener_port               = var.alb_listener_port
+  alb_listener_protocol           = var.alb_listener_protocol
+  load_balancer_type              = var.load_balancer_type
+  enable_deletion_protection      = var.enable_deletion_protection
+  
+  # Health Check Configuration
+  health_check_healthy_threshold   = var.health_check_healthy_threshold
+  health_check_interval            = var.health_check_interval
+  health_check_timeout             = var.health_check_timeout
+  health_check_unhealthy_threshold = var.health_check_unhealthy_threshold
+  health_check_matcher             = var.health_check_matcher
 
   # SSL/HTTPS configuration
   enable_https         = var.enable_https
@@ -65,6 +81,7 @@ module "ecs" {
   container_health_check_start_period = var.container_health_check_start_period
   enable_container_insights           = var.enable_container_insights
   ecr_repository_name                 = var.ecr_repository_name
+  image_tag                           = var.image_tag
 
   # Module integration variables
   vpc_id             = module.vpc.vpc_id
@@ -75,11 +92,11 @@ module "ecs" {
 }
 
 module "route53" {
-  source = "./route53"
+  source = "./modules/route53"
 
   route53_zone_name   = var.route53_zone_name
   route53_record_name = var.route53_record_name
-  create_hosted_zone  = false # Use existing hosted zone from Route53 transfer
+  create_hosted_zone  = true # Create hosted zone for registered domain
   alb_dns_name        = module.alb.alb_dns_name
   alb_zone_id         = module.alb.alb_zone_id
 

@@ -45,16 +45,9 @@ variable "environment" {
 }
 
 # ECS-specific variables
-variable "container_image" {
-  description = "Docker image for the ECS task (not used when using ECR)"
-  type        = string
-  default     = ""
-}
-
 variable "image_tag" {
   description = "Docker image tag"
   type        = string
-  default     = "latest"
 }
 
 variable "cpu" {
@@ -215,13 +208,11 @@ variable "route53_record_name" {
 variable "enable_https" {
   description = "Enable HTTPS listener with SSL certificate"
   type        = bool
-  default     = true
 }
 
 variable "enable_http_redirect" {
   description = "Enable HTTP to HTTPS redirect"
   type        = bool
-  default     = true
 }
 
 variable "domain_name" {
@@ -232,5 +223,4 @@ variable "domain_name" {
 variable "subject_alternative_names" {
   description = "Subject alternative names for ACM certificate"
   type        = list(string)
-  default     = []
 }

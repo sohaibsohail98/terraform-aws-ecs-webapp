@@ -1,22 +1,12 @@
-variable "vpc_cidr" {
-  description = "The CIDR block for the VPC where the ECS cluster will be deployed."
+# Core application variables
+variable "app_name" {
+  description = "Name of the application"
   type        = string
 }
 
-variable "public_subnets" {
-  description = "A map of public subnet configurations"
-  type = map(object({
-    cidr     = string
-    az_index = number
-  }))
-}
-
-variable "private_subnets" {
-  description = "A map of private subnet configurations"
-  type = map(object({
-    cidr     = string
-    az_index = number
-  }))
+variable "environment" {
+  description = "Environment name (e.g., dev, staging, prod)"
+  type        = string
 }
 
 variable "aws_region" {
@@ -27,21 +17,6 @@ variable "aws_region" {
 variable "container_port" {
   description = "The port on which the container application runs"
   type        = number
-}
-
-variable "health_check_path" {
-  description = "The path for ALB health check"
-  type        = string
-}
-
-variable "app_name" {
-  description = "Name of the application"
-  type        = string
-}
-
-variable "environment" {
-  description = "Environment name (e.g., dev, staging, prod)"
-  type        = string
 }
 
 # ECS-specific variables
@@ -82,42 +57,6 @@ variable "max_capacity" {
   type        = number
 }
 
-# Load Balancer Configuration
-variable "alb_listener_port" {
-  description = "Port for the ALB listener"
-  type        = number
-}
-
-variable "alb_listener_protocol" {
-  description = "Protocol for the ALB listener"
-  type        = string
-}
-
-# Health Check Configuration
-variable "health_check_healthy_threshold" {
-  description = "Number of consecutive health checks successes required"
-  type        = number
-}
-
-variable "health_check_interval" {
-  description = "Interval between health checks (seconds)"
-  type        = number
-}
-
-variable "health_check_timeout" {
-  description = "Health check timeout (seconds)"
-  type        = number
-}
-
-variable "health_check_unhealthy_threshold" {
-  description = "Number of consecutive health check failures required"
-  type        = number
-}
-
-variable "health_check_matcher" {
-  description = "HTTP status codes to consider healthy"
-  type        = string
-}
 
 # Auto Scaling Configuration
 variable "cpu_target_value" {
@@ -128,6 +67,11 @@ variable "cpu_target_value" {
 variable "memory_target_value" {
   description = "Target memory utilization percentage for auto scaling"
   type        = number
+}
+
+variable "health_check_path" {
+  description = "The path for ALB health check"
+  type        = string
 }
 
 # CloudWatch Configuration
@@ -173,22 +117,6 @@ variable "container_health_check_start_period" {
   type        = number
 }
 
-# Load Balancer Configuration
-variable "load_balancer_type" {
-  description = "Type of load balancer (application, network, or gateway)"
-  type        = string
-}
-
-variable "enable_deletion_protection" {
-  description = "Enable deletion protection for load balancer"
-  type        = bool
-}
-
-# Security Configuration
-variable "alb_ingress_cidr_blocks" {
-  description = "CIDR blocks allowed to access the ALB"
-  type        = list(string)
-}
 
 # ECS Cluster Configuration
 variable "enable_container_insights" {
@@ -199,31 +127,35 @@ variable "enable_container_insights" {
 variable "ecr_repository_name" {
   description = "Name of the ECR repository for the application"
   type        = string
-
 }
-variable "route53_zone_name" {
-  description = "Route53 hosted zone name for the domain"
+
+# Module integration variables
+variable "vpc_id" {
+  description = "ID of the VPC from vpc module"
   type        = string
+  default     = ""
 }
 
-variable "route53_record_name" {
-  description = "Route53 record name for the domain"
+variable "private_subnet_ids" {
+  description = "List of private subnet IDs from vpc module"
+  type        = list(string)
+  default     = []
+}
+
+variable "security_group_id" {
+  description = "Security group ID for ECS tasks from security module"
   type        = string
+  default     = ""
 }
 
-variable "route53_zone_id" {
-  description = "Route53 hosted zone ID for DNS validation"
+variable "target_group_arn" {
+  description = "ALB target group ARN from alb module"
   type        = string
+  default     = ""
 }
 
-variable "enable_https" {
-  description = "Enable HTTPS listener with SSL certificate"
-  type        = bool
-  default     = true
-}
-
-variable "enable_http_redirect" {
-  description = "Enable HTTP to HTTPS redirect"
-  type        = bool
-  default     = true
+variable "listener_arn" {
+  description = "ALB listener ARN from alb module"
+  type        = string
+  default     = ""
 }

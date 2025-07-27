@@ -1,6 +1,21 @@
+# ECR Repository
+resource "aws_ecr_repository" "app_repo" {
+  name                 = var.ecr_repository_name
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+
+  tags = {
+    Name        = var.ecr_repository_name
+    Environment = var.environment
+  }
+}
+
 # ECR Repository Policy
 resource "aws_ecr_repository_policy" "app" {
-  repository = data.aws_ecr_image.app_image.repository_name
+  repository = aws_ecr_repository.app_repo.name
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -22,7 +37,7 @@ resource "aws_ecr_repository_policy" "app" {
 
 # ECR Lifecycle Policy
 resource "aws_ecr_lifecycle_policy" "app" {
-  repository = data.aws_ecr_image.app_image.repository_name
+  repository = aws_ecr_repository.app_repo.name
 
   policy = jsonencode({
     rules = [
@@ -43,6 +58,8 @@ resource "aws_ecr_lifecycle_policy" "app" {
 }
 
 data "aws_ecr_image" "app_image" {
-  repository_name = var.ecr_repository_name
+  repository_name = aws_ecr_repository.app_repo.name
   image_tag       = var.image_tag # e.g. "latest" or your timestamp tag
+
+  depends_on = [aws_ecr_repository.app_repo]
 }

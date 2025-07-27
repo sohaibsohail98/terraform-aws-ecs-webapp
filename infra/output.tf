@@ -1,44 +1,49 @@
 output "vpc_id" {
   description = "VPC ID"
-  value       = aws_vpc.main.id
+  value       = module.vpc.vpc_id
 }
 
 output "public_subnet_ids" {
   description = "Public subnet IDs"
-  value       = [for subnet in aws_subnet.public : subnet.id]
+  value       = module.vpc.public_subnet_ids
 }
 
 output "private_subnet_ids" {
   description = "Private subnet IDs"
-  value       = [for subnet in aws_subnet.private : subnet.id]
+  value       = module.vpc.private_subnet_ids
 }
 
 output "load_balancer_url" {
   description = "Load balancer URL"
-  value       = "http://${aws_lb.main.dns_name}"
+  value       = "http://${module.alb.alb_dns_name}"
 }
 
 output "load_balancer_dns_name" {
   description = "Load balancer DNS name"
-  value       = aws_lb.main.dns_name
+  value       = module.alb.alb_dns_name
 }
 
 output "load_balancer_zone_id" {
   description = "Load balancer zone ID"
-  value       = aws_lb.main.zone_id
+  value       = module.alb.alb_zone_id
 }
 
 output "ecs_cluster_name" {
   description = "ECS cluster name"
-  value       = aws_ecs_cluster.main.name
+  value       = module.ecs.cluster_name
 }
 
 output "ecs_service_name" {
   description = "ECS service name"
-  value       = aws_ecs_service.main.name
+  value       = module.ecs.service_name
+}
+
+output "ecr_repository_url" {
+  description = "ECR repository URL"
+  value       = module.ecs.ecr_repository_url
 }
 
 output "cloudwatch_log_group" {
   description = "CloudWatch log group name"
-  value       = aws_cloudwatch_log_group.ecs_log_group.name
+  value       = module.ecs.log_group_name
 }

@@ -73,3 +73,11 @@ container_health_check_start_period = 60
 
 # Security Configuration
 enable_container_insights = true
+
+route53_zone_name   = "sohaibsohail.com"
+route53_record_name = "portfolio.sohaibsohail.com"
+route53_zone_id     = "Z1234567890ABC" # Replace with your actual hosted zone ID
+
+# SSL/HTTPS Configuration
+enable_https         = true
+enable_http_redirect = true

@@ -32,11 +32,11 @@ ecr_repository_name = "sohaibsohail/sohaib-portfolio"
 image_tag           = "latest"
 
 # ECS Configuration
-cpu             = 256
-memory          = 512
-desired_count   = 2
-min_capacity    = 1
-max_capacity    = 10
+cpu           = 256
+memory        = 512
+desired_count = 2
+min_capacity  = 1
+max_capacity  = 10
 
 # Load Balancer Configuration
 alb_listener_port          = 80
@@ -77,7 +77,7 @@ route53_zone_name   = "sohaibsohail.co.uk"
 route53_record_name = "portfolio.sohaibsohail.co.uk"
 
 # SSL/HTTPS Configuration
-enable_https                = true
-enable_http_redirect        = true
-domain_name                 = "portfolio.sohaibsohail.co.uk"
-subject_alternative_names   = []
+enable_https              = true
+enable_http_redirect      = true
+domain_name               = "portfolio.sohaibsohail.co.uk"
+subject_alternative_names = []

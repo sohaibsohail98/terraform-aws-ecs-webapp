@@ -33,13 +33,13 @@ module "alb" {
   alb_security_group_id = module.security.alb_security_group_id
   container_port        = var.container_port
   health_check_path     = var.health_check_path
-  
+
   # ALB Configuration
-  alb_listener_port               = var.alb_listener_port
-  alb_listener_protocol           = var.alb_listener_protocol
-  load_balancer_type              = var.load_balancer_type
-  enable_deletion_protection      = var.enable_deletion_protection
-  
+  alb_listener_port          = var.alb_listener_port
+  alb_listener_protocol      = var.alb_listener_protocol
+  load_balancer_type         = var.load_balancer_type
+  enable_deletion_protection = var.enable_deletion_protection
+
   # Health Check Configuration
   health_check_healthy_threshold   = var.health_check_healthy_threshold
   health_check_interval            = var.health_check_interval

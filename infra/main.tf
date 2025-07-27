@@ -1,248 +1,94 @@
-# Get available AZs
-data "aws_availability_zones" "available" {
-  state = "available"
+module "vpc" {
+  source = "./modules/vpc"
+
+  vpc_cidr        = var.vpc_cidr
+  public_subnets  = var.public_subnets
+  private_subnets = var.private_subnets
 }
 
-# VPC
-resource "aws_vpc" "main" {
-  cidr_block           = var.vpc_cidr
-  enable_dns_hostnames = true
-  enable_dns_support   = true
+module "security" {
+  source = "./modules/security"
 
-  tags = {
-    Name = "ecs-webapp-vpc"
-  }
+  vpc_id         = module.vpc.vpc_id
+  container_port = var.container_port
 }
 
-# Internet Gateway
-resource "aws_internet_gateway" "main" {
-  vpc_id = aws_vpc.main.id
+module "acm" {
+  count  = var.enable_https ? 1 : 0
+  source = "./modules/acm"
 
-  tags = {
-    Name = "ecs-webapp-igw"
-  }
+  domain_name = var.route53_record_name
+  app_name    = var.app_name
+  environment = var.environment
 }
 
-# Public Subnets
-resource "aws_subnet" "public" {
-  for_each = var.public_subnets
+module "alb" {
+  source = "./modules/alb"
 
-  vpc_id                  = aws_vpc.main.id
-  cidr_block              = each.value.cidr
-  availability_zone       = data.aws_availability_zones.available.names[each.value.az_index]
-  map_public_ip_on_launch = true
+  vpc_id                = module.vpc.vpc_id
+  public_subnet_ids     = module.vpc.public_subnet_ids
+  alb_security_group_id = module.security.alb_security_group_id
+  container_port        = var.container_port
+  health_check_path     = var.health_check_path
 
-  tags = {
-    Name = "ecs-webapp-public-${each.key}"
-    Type = "public"
-  }
+  # SSL/HTTPS configuration
+  enable_https         = var.enable_https
+  enable_http_redirect = var.enable_http_redirect
+  certificate_arn      = var.enable_https ? module.acm[0].certificate_arn : null
 }
 
-# Private Subnets
-resource "aws_subnet" "private" {
-  for_each = var.private_subnets
+module "ecs" {
+  source = "./modules/ecs"
 
-  vpc_id            = aws_vpc.main.id
-  cidr_block        = each.value.cidr
-  availability_zone = data.aws_availability_zones.available.names[each.value.az_index]
+  # Core application variables
+  app_name          = var.app_name
+  environment       = var.environment
+  aws_region        = var.aws_region
+  container_port    = var.container_port
+  health_check_path = var.health_check_path
 
-  tags = {
-    Name = "ecs-webapp-private-${each.key}"
-    Type = "private"
-  }
+  # ECS-specific variables
+  cpu                                 = var.cpu
+  memory                              = var.memory
+  desired_count                       = var.desired_count
+  min_capacity                        = var.min_capacity
+  max_capacity                        = var.max_capacity
+  cpu_target_value                    = var.cpu_target_value
+  memory_target_value                 = var.memory_target_value
+  log_retention_days                  = var.log_retention_days
+  launch_type                         = var.launch_type
+  network_mode                        = var.network_mode
+  assign_public_ip                    = var.assign_public_ip
+  container_health_check_interval     = var.container_health_check_interval
+  container_health_check_timeout      = var.container_health_check_timeout
+  container_health_check_retries      = var.container_health_check_retries
+  container_health_check_start_period = var.container_health_check_start_period
+  enable_container_insights           = var.enable_container_insights
+  ecr_repository_name                 = var.ecr_repository_name
+
+  # Module integration variables
+  vpc_id             = module.vpc.vpc_id
+  private_subnet_ids = module.vpc.private_subnet_ids
+  security_group_id  = module.security.ecs_security_group_id
+  target_group_arn   = module.alb.target_group_arn
+  listener_arn       = module.alb.listener_arn
 }
 
-# Elastic IPs for NAT Gateways
-resource "aws_eip" "nat" {
-  for_each = aws_subnet.public
+module "route53" {
+  source = "./route53"
 
-  domain = "vpc"
+  route53_zone_name   = var.route53_zone_name
+  route53_record_name = var.route53_record_name
+  route53_zone_id     = var.route53_zone_id
+  create_hosted_zone  = false # Use existing hosted zone
+  alb_dns_name        = module.alb.alb_dns_name
+  alb_zone_id         = module.alb.alb_zone_id
 
-  tags = {
-    Name = "ecs-webapp-nat-eip-${each.key}"
-  }
+  # SSL certificate validation
+  enable_ssl                = var.enable_https
+  domain_validation_options = var.enable_https ? module.acm[0].domain_validation_options : []
+  certificate_arn           = var.enable_https ? module.acm[0].certificate_arn : null
 
-  depends_on = [aws_internet_gateway.main]
+  depends_on = [module.acm, module.alb]
 }
 
-# NAT Gateways (one per public subnet for HA)
-resource "aws_nat_gateway" "main" {
-  for_each = aws_subnet.public
-
-  allocation_id = aws_eip.nat[each.key].id
-  subnet_id     = each.value.id
-
-  tags = {
-    Name = "ecs-webapp-nat-gw-${each.key}"
-  }
-
-  depends_on = [aws_internet_gateway.main]
-}
-
-# Route Table for Public Subnets
-resource "aws_route_table" "public" {
-  vpc_id = aws_vpc.main.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.main.id
-  }
-
-  tags = {
-    Name = "ecs-webapp-public-rt"
-  }
-}
-
-# Route Tables for Private Subnets
-resource "aws_route_table" "private" {
-  for_each = aws_subnet.private
-
-  vpc_id = aws_vpc.main.id
-
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.main[keys(aws_subnet.public)[0]].id
-  }
-
-  tags = {
-    Name = "ecs-webapp-private-rt-${each.key}"
-  }
-}
-
-# Route Table Associations - Public
-resource "aws_route_table_association" "public" {
-  for_each = aws_subnet.public
-
-  subnet_id      = each.value.id
-  route_table_id = aws_route_table.public.id
-}
-
-# Route Table Associations - Private
-resource "aws_route_table_association" "private" {
-  for_each = aws_subnet.private
-
-  subnet_id      = each.value.id
-  route_table_id = aws_route_table.private[each.key].id
-}
-
-# Application Load Balancer Security Group
-resource "aws_security_group" "alb" {
-  name_prefix = "ecs-webapp-alb-"
-  vpc_id      = aws_vpc.main.id
-
-  ingress {
-    from_port   = var.alb_listener_port
-    to_port     = var.alb_listener_port
-    protocol    = "tcp"
-    cidr_blocks = var.alb_ingress_cidr_blocks
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name = "ecs-webapp-alb-sg"
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-# ECS Tasks Security Group
-resource "aws_security_group" "ecs_tasks" {
-  name_prefix = "ecs-webapp-tasks-"
-  vpc_id      = aws_vpc.main.id
-
-  ingress {
-    from_port       = var.container_port
-    to_port         = var.container_port
-    protocol        = "tcp"
-    security_groups = [aws_security_group.alb.id]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name = "ecs-webapp-tasks-sg"
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-# Application Load Balancer
-resource "aws_lb" "main" {
-  name               = "ecs-webapp-alb"
-  internal           = false
-  load_balancer_type = var.load_balancer_type
-  security_groups    = [aws_security_group.alb.id]
-  subnets            = [for subnet in aws_subnet.public : subnet.id]
-
-  enable_deletion_protection = var.enable_deletion_protection
-
-  tags = {
-    Name = "ecs-webapp-alb"
-  }
-}
-
-# ALB Target Group
-resource "aws_lb_target_group" "main" {
-  name        = "ecs-webapp-tg"
-  port        = var.container_port
-  protocol    = "HTTP"
-  vpc_id      = aws_vpc.main.id
-  target_type = "ip"
-
-  health_check {
-    enabled             = true
-    healthy_threshold   = var.health_check_healthy_threshold
-    interval            = var.health_check_interval
-    matcher             = var.health_check_matcher
-    path                = var.health_check_path
-    port                = "traffic-port"
-    protocol            = "HTTP"
-    timeout             = var.health_check_timeout
-    unhealthy_threshold = var.health_check_unhealthy_threshold
-  }
-
-  tags = {
-    Name = "ecs-webapp-tg"
-  }
-}
-
-# ALB Listener
-resource "aws_lb_listener" "main" {
-  load_balancer_arn = aws_lb.main.arn
-  port              = var.alb_listener_port
-  protocol          = var.alb_listener_protocol
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.main.arn
-  }
-}
-
-# ECS Cluster
-resource "aws_ecs_cluster" "main" {
-  name = "ecs-webapp-cluster"
-
-  setting {
-    name  = "containerInsights"
-    value = var.enable_container_insights ? "enabled" : "disabled"
-  }
-
-  tags = {
-    Name = "ecs-webapp-cluster"
-  }
-}

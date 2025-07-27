@@ -125,24 +125,37 @@ resource "aws_ecs_service" "main" {
   launch_type     = var.launch_type
 
   network_configuration {
-    security_groups  = [aws_security_group.ecs_tasks.id]
-    subnets          = [for subnet in aws_subnet.private : subnet.id]
+    security_groups  = [var.security_group_id]
+    subnets          = var.private_subnet_ids
     assign_public_ip = var.assign_public_ip
   }
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.main.arn
+    target_group_arn = var.target_group_arn
     container_name   = var.app_name
     container_port   = var.container_port
   }
 
   depends_on = [
-    aws_lb_listener.main,
     aws_iam_role_policy_attachment.ecs_task_execution_role_policy
   ]
 
   tags = {
     Name = "${var.app_name}-service"
+  }
+}
+
+# ECS Cluster
+resource "aws_ecs_cluster" "main" {
+  name = "ecs-webapp-cluster"
+
+  setting {
+    name  = "containerInsights"
+    value = var.enable_container_insights ? "enabled" : "disabled"
+  }
+
+  tags = {
+    Name = "ecs-webapp-cluster"
   }
 }
 

@@ -58,28 +58,41 @@ A production-ready, highly available ECS Fargate web application infrastructure 
 
 ## 🔧 Recent Infrastructure Improvements
 
-### Infrastructure Modularization (Latest Update)
+### Infrastructure Modularization & Dependency Resolution (Latest Update)
 
-The Terraform infrastructure has been **completely modularized** for better maintainability, reusability, and team collaboration:
+The Terraform infrastructure has been **completely refactored** to eliminate circular dependencies and implement best practices:
 
-#### ✅ What Changed
-1. **Split monolithic code** into focused modules:
+#### ✅ Critical Fixes Applied
+1. **Circular Dependency Resolution**:
+   - Removed interdependent resource references between modules
+   - Moved cross-module associations to main.tf
+   - Implemented clean separation of concerns
+
+2. **Certificate Validation Issues Fixed**:
+   - Proper DNS validation workflow: Route53 → ACM → Certificate Validation → HTTPS Listener
+   - Certificate validation now completes before ALB attempts to use it
+   - Target group associations wait for validated certificates
+
+3. **Modular Architecture Implemented**:
    - `modules/vpc/` - VPC, subnets, NAT gateways, route tables
-   - `modules/alb/` - Application Load Balancer and target groups
+   - `modules/alb/` - Application Load Balancer and target groups (HTTP only)
    - `modules/security/` - Security groups for ALB and ECS tasks
    - `modules/ecs/` - ECS cluster, service, task definitions, auto-scaling, ECR
-   - `modules/acm/` - SSL certificate management
-   - `modules/route53/` - DNS zones and domain management
+   - `modules/acm/` - SSL certificate creation only
+   - `modules/route53/` - Hosted zone creation only
+   - `main.tf` - Handles all cross-module associations (HTTPS listener, DNS records, certificate validation)
 
-2. **Cleaned up variables** - Removed duplicate variables across modules
-3. **Enhanced documentation** - Split into focused guides (see Documentation section)
+4. **Code Quality Improvements**:
+   - Removed all default values from module variables
+   - Eliminated conditional logic complexity
+   - Clean, predictable module behavior
 
 #### 🎯 Benefits
-- **Separation of Concerns**: Each module handles specific infrastructure domain
-- **Reusability**: Modules can be reused across different environments
-- **Team Collaboration**: Different teams can work on different modules
-- **Easier Testing**: Modules can be tested independently
-- **Clear Dependencies**: Well-defined inputs/outputs between modules
+- **No More Circular Dependencies**: Clean dependency graph with proper resource ordering
+- **Reliable SSL/HTTPS**: Certificate validation completes before listener creation
+- **Modular Design**: Each module has single responsibility, associations handled centrally
+- **Maintainable Code**: No default values, explicit variable requirements
+- **Production Ready**: Eliminates deployment failures from dependency conflicts
 
 ## 🚀 Quick Start
 

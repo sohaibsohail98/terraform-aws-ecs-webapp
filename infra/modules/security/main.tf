@@ -3,9 +3,18 @@ resource "aws_security_group" "alb" {
   name_prefix = "ecs-webapp-alb-"
   vpc_id      = var.vpc_id
 
+  # HTTP ingress
   ingress {
-    from_port   = var.alb_listener_port
-    to_port     = var.alb_listener_port
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = var.alb_ingress_cidr_blocks
+  }
+
+  # HTTPS ingress
+  ingress {
+    from_port   = 443
+    to_port     = 443
     protocol    = "tcp"
     cidr_blocks = var.alb_ingress_cidr_blocks
   }

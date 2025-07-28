@@ -47,10 +47,8 @@ module "alb" {
   health_check_unhealthy_threshold = var.health_check_unhealthy_threshold
   health_check_matcher             = var.health_check_matcher
 
-  # SSL/HTTPS configuration
-  enable_https         = var.enable_https
+  # HTTP redirect configuration
   enable_http_redirect = var.enable_http_redirect
-  certificate_arn      = var.enable_https ? module.acm[0].certificate_arn : null
 }
 
 module "ecs" {
@@ -88,23 +86,79 @@ module "ecs" {
   private_subnet_ids = module.vpc.private_subnet_ids
   security_group_id  = module.security.ecs_security_group_id
   target_group_arn   = module.alb.target_group_arn
-  listener_arn       = module.alb.listener_arn
+  listener_arn       = var.enable_https ? aws_lb_listener.https[0].arn : module.alb.listener_arn
 }
 
 module "route53" {
   source = "./modules/route53"
 
-  route53_zone_name   = var.route53_zone_name
-  route53_record_name = var.route53_record_name
-  create_hosted_zone  = true # Create hosted zone for registered domain
-  alb_dns_name        = module.alb.alb_dns_name
-  alb_zone_id         = module.alb.alb_zone_id
+  route53_zone_name = var.route53_zone_name
+}
 
-  # SSL certificate validation
-  enable_ssl                = var.enable_https
-  domain_validation_options = var.enable_https ? module.acm[0].domain_validation_options : []
-  certificate_arn           = var.enable_https ? module.acm[0].certificate_arn : null
+# Certificate validation records
+resource "aws_route53_record" "cert_validation" {
+  for_each = var.enable_https ? {
+    for dvo in module.acm[0].domain_validation_options : dvo.domain_name => {
+      name   = dvo.resource_record_name
+      record = dvo.resource_record_value
+      type   = dvo.resource_record_type
+    }
+  } : {}
 
-  depends_on = [module.acm]
+  allow_overwrite = true
+  name            = each.value.name
+  records         = [each.value.record]
+  ttl             = 60
+  type            = each.value.type
+  zone_id         = module.route53.zone_id
+
+  depends_on = [module.route53, module.acm]
+}
+
+# Certificate validation
+resource "aws_acm_certificate_validation" "main" {
+  count = var.enable_https ? 1 : 0
+
+  certificate_arn         = module.acm[0].certificate_arn
+  validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
+
+  timeouts {
+    create = "10m"
+  }
+
+  depends_on = [aws_route53_record.cert_validation]
+}
+
+# HTTPS Listener (created separately to avoid circular dependencies)
+resource "aws_lb_listener" "https" {
+  count = var.enable_https ? 1 : 0
+
+  load_balancer_arn = module.alb.alb_arn
+  port              = "443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-TLS-1-2-2017-01"
+  certificate_arn   = aws_acm_certificate_validation.main[0].certificate_arn
+
+  default_action {
+    type             = "forward"
+    target_group_arn = module.alb.target_group_arn
+  }
+
+  depends_on = [aws_acm_certificate_validation.main]
+}
+
+# Route53 A record for ALB
+resource "aws_route53_record" "main" {
+  zone_id = module.route53.zone_id
+  name    = var.route53_record_name
+  type    = "A"
+
+  alias {
+    name                   = module.alb.alb_dns_name
+    zone_id                = module.alb.alb_zone_id
+    evaluate_target_health = true
+  }
+
+  depends_on = [module.alb, module.route53]
 }
 
